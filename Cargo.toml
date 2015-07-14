@@ -1,0 +1,17 @@
+[package]
+name = "hello_glium"
+version = "0.0.1"
+authors = [ "Gerlof Fokkema <gerlof.fokkema@gmail.com>" ]
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[[bin]]
+name = "mesh"
+path = "src/mesh.rs"
+
+[dependencies]
+glium = "*"
+regex = "*"
+regex_macros = "*"
