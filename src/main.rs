@@ -10,8 +10,18 @@ extern crate regex;
 mod mesh;
 
 use std::env;
+use std::fs::File;
+use std::io::Read;
+
 use glium::{DisplayBuild, Surface};
 use glium::glutin::{Event, ElementState, VirtualKeyCode};
+
+#[derive(Copy, Clone, Debug)]
+struct Vertex {
+    pub position: [f32; 3],
+    pub barycentric: [f32; 3],
+}
+implement_vertex!(Vertex, position, barycentric);
 
 fn main() {
 	let args: Vec<_> = env::args().skip(1).collect();
@@ -20,45 +30,81 @@ fn main() {
 		[]      => { println!("No mesh specified"); return },
 		_       => { println!("Too many arguments specified"); return },
 	};
-    let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
-	let data = mesh::open(path);
-	println!("{:?}", data);
+	
+    let mut file = match File::open(path) {
+        Ok(e)  => e,
+        Err(_) => panic!("Invalid mesh specified"),
+    };
 
-    let vertex_buffer = glium::VertexBuffer::new(&display, data);
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+    let mut obj = String::new();
+    match file.read_to_string(&mut obj) {
+        Ok(_)  => (),
+        Err(_) => panic!("Error while reading mesh"),
+    }
+    
+    show(obj.parse::<mesh::Mesh>().unwrap());
+}
 
+fn show(obj: mesh::Mesh) {
     let vertex_shader_src = r#"
         #version 140
-
-        in vec3 position;
+        
+        attribute vec3 position;
+        attribute vec3 barycentric;
+        
+        out vec3 uv;
 
 		uniform mat4 matrix;
 
         void main() {
             gl_Position = matrix * vec4(position, 1.0);
+            
+            uv = barycentric;
         }
     "#;
 
     let fragment_shader_src = r#"
         #version 140
 
+		in vec3 uv;
+		
         out vec4 color;
 
         void main() {
-            color = vec4(1.0, 0.0, 0.0, 1.0);
+            color = vec4(uv, 1.0);
         }
     "#;
-
-    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
     
-    let mut t = -0.5;
-
+	let vertices = obj.triangles.iter()
+        .flat_map(|x| {
+            let mut vertex = Vec::new();
+            for vi in 0..x.vertices.len() {
+                let mut barycentric = [ 0.0, 0.0, 0.0 ];
+                barycentric[vi] = 1.0;
+                vertex.push(Vertex {
+                    position: obj.vertices[x.vertices[vi] - 1].position,
+                    barycentric: barycentric,
+                });
+            }
+            vertex
+        })
+        .collect::<Vec<_>>();
+	
+    let display = glium::glutin::WindowBuilder::new()
+                    .with_dimensions(800, 800)
+                    .with_depth_buffer(255)
+                    .build_glium().unwrap();
+    let vertex_buffer = glium::VertexBuffer::new(&display, vertices);
+    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
+//    let params = glium::DrawParameters {
+//        depth_range: (0.1, 1.0),
+//        depth_test: glium::DepthTest::IfLess,
+//        depth_write: true,
+//        .. Default::default()
+//    };
+    
     loop {
-    	t += 0.002;
-    	if t > 0.5 {
-    		t = -0.5;
-    	}
-
     	let mut target = display.draw();
     	target.clear_color(0.0, 0.0, 0.0, 1.0);
 
@@ -66,8 +112,8 @@ fn main() {
 			matrix: [
 				[1.0, 0.0, 0.0, 0.0],
 				[0.0, 1.0, 0.0, 0.0],
-				[0.0, 0.0, 1.0, 0.0],
-				[0.0, 0.0, 0.0, 1.0],
+				[0.0, 0.0, 1.0, 0.5],
+				[0.0, 0.0, 0.0, 2.0],
 			]
 		};
 

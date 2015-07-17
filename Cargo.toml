@@ -7,10 +7,6 @@ authors = [ "Gerlof Fokkema <gerlof.fokkema@gmail.com>" ]
 name = "main"
 path = "src/main.rs"
 
-[[bin]]
-name = "mesh"
-path = "src/mesh.rs"
-
 [dependencies]
 glium = "*"
 regex = "*"
