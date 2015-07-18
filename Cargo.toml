@@ -8,6 +8,7 @@ name = "main"
 path = "src/main.rs"
 
 [dependencies]
+cgmath = "*"
 glium = "*"
 regex = "*"
 regex_macros = "*"

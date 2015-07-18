@@ -1,10 +1,11 @@
 #![feature(convert)]
+#![feature(core_intrinsics)]
 #![feature(slice_patterns)]
 #![feature(plugin)]
 #![plugin(regex_macros)]
-#[macro_use]
 
-extern crate glium;
+#[macro_use] extern crate glium;
+extern crate cgmath;
 extern crate regex;
 
 mod mesh;
@@ -15,6 +16,14 @@ use std::io::Read;
 
 use glium::{DisplayBuild, Surface};
 use glium::glutin::{Event, ElementState, VirtualKeyCode};
+
+fn print_type_of<T>(_: &T) -> () {
+    let type_name =
+        unsafe {
+            std::intrinsics::type_name::<T>()
+        };
+    println!("{}", type_name);
+}
 
 #[derive(Copy, Clone, Debug)]
 struct Vertex {
@@ -53,11 +62,11 @@ fn show(obj: mesh::Mesh) {
         attribute vec3 barycentric;
         
         out vec3 uv;
-
-        uniform mat4 matrix;
-
+        
+        uniform mat4 project;
+        
         void main() {
-            gl_Position = matrix * vec4(position, 1.0);
+            gl_Position = project * vec4(position, 1.0);
             
             uv = barycentric;
         }
@@ -91,7 +100,7 @@ fn show(obj: mesh::Mesh) {
         .collect::<Vec<_>>();
     
     let display = glium::glutin::WindowBuilder::new()
-                    .with_dimensions(800, 800)
+                    .with_dimensions(800, 600)
                     .with_depth_buffer(24)
                     .build_glium().unwrap();
     let vertex_buffer = glium::VertexBuffer::new(&display, vertices);
@@ -104,15 +113,14 @@ fn show(obj: mesh::Mesh) {
         .. Default::default()
     };
     
+    let project = cgmath::perspective::<f32, _>(cgmath::deg(90.0), 800.0 / 600.0, 0.1, 100.0);
+    
     loop {
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 24.0);
 
         let uniforms = uniform! {
-            matrix: [ [1.0, 0.0, 0.0, 0.0],
-                      [0.0, 1.0, 0.0, 0.0],
-                      [0.0, 0.0, 1.0, 0.0],
-                      [0.0, 0.0, 1.0, 2.0], ],
+            project: project,
         };
 
         target.draw(&vertex_buffer, &indices, &program, &uniforms, &params).unwrap();
