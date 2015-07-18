@@ -64,9 +64,11 @@ fn show(obj: mesh::Mesh) {
         out vec3 uv;
         
         uniform mat4 project;
+        uniform mat4 view;
+        uniform mat4 model;
         
         void main() {
-            gl_Position = project * vec4(position, 1.0);
+            gl_Position = project * view * model * vec4(position, 1.0);
             
             uv = barycentric;
         }
@@ -115,6 +117,14 @@ fn show(obj: mesh::Mesh) {
     };
     
     let project = cgmath::perspective::<f32, _>(cgmath::deg(90.0), 800.0 / 600.0, 0.1, 100.0);
+    let view    = [ [ 1.0,  0.0,   0.0, 0.0 ],
+                    [ 0.0,  1.0,   0.0, 0.0 ],
+                    [ 0.0,  0.0,   1.0, 0.0 ],
+                    [ 0.0, -2.0, -10.0, 1.0 ], ];
+    let model   = [ [ 1.0,  0.0,   0.0, 0.0 ],
+                    [ 0.0,  1.0,   0.0, 0.0 ],
+                    [ 0.0,  0.0,   1.0, 0.0 ],
+                    [ 0.0,  0.0,   0.0, 1.0 ], ];
     
     loop {
         let mut target = display.draw();
@@ -122,6 +132,8 @@ fn show(obj: mesh::Mesh) {
 
         let uniforms = uniform! {
             project: project,
+            view:    view,
+            model:   model,
         };
 
         target.draw(&vertex_buffer, &indices, &program, &uniforms, &params).unwrap();
