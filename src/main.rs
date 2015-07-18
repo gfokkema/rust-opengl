@@ -107,7 +107,8 @@ fn show(obj: mesh::Mesh) {
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
     let params = glium::DrawParameters {
-        backface_culling: glium::BackfaceCullingMode::CullCounterClockWise,
+        // FIXME: Something is wrong in code or in cubes.obj
+        backface_culling: glium::BackfaceCullingMode::CullingDisabled,
         depth_test: glium::DepthTest::IfLess,
         depth_write: true,
         .. Default::default()
@@ -117,7 +118,7 @@ fn show(obj: mesh::Mesh) {
     
     loop {
         let mut target = display.draw();
-        target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 24.0);
+        target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 24.0);
 
         let uniforms = uniform! {
             project: project,
