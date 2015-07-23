@@ -3,20 +3,17 @@ extern crate regex;
 use regex::Regex;
 use std::str::FromStr;
 
-#[derive(Debug)]
-pub struct Vertex {
+#[derive(Copy, Clone, Debug)]
+struct Vertex {
     pub position: [f32; 3],
+    pub barycentric: [f32; 3],
 }
-
-#[derive(Debug)]
-pub struct Face {
-    pub vertices: [usize; 3],
-}
+implement_vertex!(Vertex, position, barycentric);
 
 #[derive(Debug)]
 pub struct Mesh {
-    pub triangles: Vec<Face>,
-    pub vertices:  Vec<Vertex>,
+    pub triangles: Vec<[usize; 3]>,
+    pub vertices:  Vec<[f32; 3]>,
 }
 
 static WHITESPACE: Regex = regex!(r"[ \t]+");
@@ -38,34 +35,26 @@ impl Mesh {
     
     fn parse_line(&mut self, line: &str) {
         match line.split(&WHITESPACE).collect::<Vec<&str>>().as_slice() {
-            ["v", rest ..] => self.vertices.push(Mesh::parse_vertex(rest).unwrap()),
-            ["f", rest ..] => self.triangles.push(Mesh::parse_face(rest).unwrap()),
+            ["v", rest ..] => self.vertices.push(parse_vertex(rest).unwrap()),
+            ["f", rest ..] => self.triangles.push(parse_face(rest).unwrap()),
             _              => (),
         }
     }
     
-    fn parse_vertex(vertex: &[&str]) -> Result<Vertex, &'static str> {
-        match vertex {
-            [v0, v1, v2] => Ok(
-                Vertex {
-                    position: [ v0.parse::<f32>().unwrap(),
-                                v1.parse::<f32>().unwrap(),
-                                v2.parse::<f32>().unwrap(), ],
-                }),
-            _            => Err("Incorrect input"), 
-        }
-    }
-    
-    fn parse_face(face: &[&str]) -> Result<Face, &'static str> {
-        match face {
-            [v0, v1, v2, ..] => Ok(
-                Face {
-                    vertices: [ v0.split("/").next().unwrap().parse::<usize>().unwrap(),
-                                v1.split("/").next().unwrap().parse::<usize>().unwrap(),
-                                v2.split("/").next().unwrap().parse::<usize>().unwrap(), ],
-                }),
-            _            => Err("Incorrect input"),
-        }
+    pub fn vertices(&self) -> Vec<Vertex> {
+        self.triangles.iter().flat_map(|x| {
+            let mut vertex = Vec::new();
+            for vi in 0 .. x.len() {
+                let mut barycentric = [ 0.0, 0.0, 0.0 ];
+                barycentric[vi] = 1.0;
+                vertex.push(Vertex {
+                    position: self.vertices[x[vi] - 1],
+                    barycentric: barycentric,
+                });
+            }
+            vertex
+        })
+        .collect::<Vec<_>>()
     }
 }
 
@@ -74,5 +63,25 @@ impl FromStr for Mesh {
     
     fn from_str(data: &str) -> Result<Mesh, Self::Err> {
         Ok(Mesh::from_str(data))
+    }
+}
+
+fn parse_vertex(vertex: &[&str]) -> Result<[f32; 3], &'static str> {
+    match vertex {
+        [v0, v1, v2, ..] =>
+            Ok( [ v0.parse::<f32>().unwrap(),
+                  v1.parse::<f32>().unwrap(),
+                  v2.parse::<f32>().unwrap(), ], ),
+        _                => Err("Incorrect input"),
+    }
+}
+
+fn parse_face(face: &[&str]) -> Result<[usize; 3], &'static str> {
+    match face {
+        [v0, v1, v2, ..] =>
+            Ok( [ v0.split("/").next().unwrap().parse::<usize>().unwrap(),
+                  v1.split("/").next().unwrap().parse::<usize>().unwrap(),
+                  v2.split("/").next().unwrap().parse::<usize>().unwrap(), ], ),
+        _                => Err("Incorrect input"),
     }
 }
