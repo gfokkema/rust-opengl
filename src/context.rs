@@ -37,12 +37,13 @@ const fragment_shader_src: &'static str = r#"
     }
 "#;
 
-pub struct Context {
+pub struct Context<'a> {
     pub display: Display,
+        params:  DrawParameters<'a>,
     pub program: Program,
 }
 
-impl Context {
+impl <'a> Context<'a> {
     pub fn new() -> Self {
         let display = WindowBuilder::new()
             .with_dimensions(800, 600)
@@ -51,22 +52,22 @@ impl Context {
         let program = Program::from_source(
             &display, vertex_shader_src, fragment_shader_src, None
         ).unwrap();
-        
-        Context {
-            display: display,
-            program: program,
-        }
-    }
-    
-    pub fn show(&self, scene: &scene::Scene) {
-        let params  = DrawParameters {
+        let params = DrawParameters {
             // FIXME: Something is wrong in code or in cubes.obj
             backface_culling:     BackfaceCullingMode::CullingDisabled,
             depth_test:           DepthTest::IfLess,
             depth_write:          true,
             .. Default::default()
         };
-
+        
+        Context {
+            display: display,
+            params:  params,
+            program: program,
+        }
+    }
+    
+    pub fn show(&self, scene: &scene::Scene) {
         let vbo = VertexBuffer::new(&self.display, scene.mesh.vertices());
         let indices = IndicesSource::NoIndices {
             primitives: PrimitiveType::TrianglesList
@@ -78,7 +79,7 @@ impl Context {
         
         let mut target = self.display.draw();
         target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 24.0);
-        target.draw(&vbo, indices, &self.program, &uniforms, &params).unwrap();
+        target.draw(&vbo, indices, &self.program, &uniforms, &self.params).unwrap();
         target.finish().unwrap();
     }
     

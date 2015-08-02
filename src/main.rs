@@ -1,5 +1,5 @@
 #![feature(convert)]
-#![feature(core_intrinsics)]
+//#![feature(core_intrinsics)]
 #![feature(slice_patterns)]
 #![feature(plugin)]
 #![plugin(regex_macros)]
