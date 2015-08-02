@@ -1,19 +1,17 @@
-extern crate regex;
-
 use regex::Regex;
 use std::str::FromStr;
 
 #[derive(Copy, Clone, Debug)]
-struct Vertex {
-    pub position: [f32; 3],
-    pub barycentric: [f32; 3],
+pub struct Vertex {
+    position: [f32; 3],
+    barycentric: [f32; 3],
 }
 implement_vertex!(Vertex, position, barycentric);
 
 #[derive(Debug)]
 pub struct Mesh {
-    pub triangles: Vec<[usize; 3]>,
-    pub vertices:  Vec<[f32; 3]>,
+    triangles: Vec<[usize; 3]>,
+    vertices:  Vec<[f32; 3]>,
 }
 
 static WHITESPACE: Regex = regex!(r"[ \t]+");
@@ -41,7 +39,7 @@ impl Mesh {
         }
     }
     
-    pub fn vertices(&self) -> Vec<Vertex> {
+    pub fn get_vertex_array(&self) -> Vec<Vertex> {
         self.triangles.iter().flat_map(|x| {
             let mut vertex = Vec::new();
             for vi in 0 .. x.len() {

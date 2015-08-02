@@ -45,11 +45,13 @@ fn main() {
         Err(_)  => panic!("Error while reading mesh"),
     }
     
-    let context = context::Context::new();
-    let mesh = obj.parse::<mesh::Mesh>().unwrap();
-    let mut scene = scene::Scene::new(mesh);
+    let size    = (800, 600);
+    let context = context::Context::new(size);
+    let camera  = camera::Camera::new(size, 90.0);
+    let mesh    = obj.parse::<mesh::Mesh>().unwrap();
+    let mut scene = scene::Scene::new(camera, mesh);
     loop {
-        context.show(&scene);
+        context.draw(&scene);
         
         for ev in context.display.poll_events() {
             if !context.handle_input(&mut scene, ev) { return; }

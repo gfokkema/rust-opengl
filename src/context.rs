@@ -6,6 +6,7 @@ use glium::glutin::Event::{KeyboardInput, MouseMoved};
 use glium::glutin::{Event, ElementState, VirtualKeyCode, WindowBuilder};
 use glium::index::{IndicesSource, NoIndices, PrimitiveType};
 
+use camera::Direction;
 use scene;
 
 const vertex_shader_src: &'static str = r#"
@@ -44,9 +45,9 @@ pub struct Context<'a> {
 }
 
 impl <'a> Context<'a> {
-    pub fn new() -> Self {
+    pub fn new(size: (i32, i32)) -> Self {
         let display = WindowBuilder::new()
-            .with_dimensions(800, 600)
+            .with_dimensions(size.0 as u32, size.1 as u32)
             .with_depth_buffer(24)
             .build_glium().unwrap();
         let program = Program::from_source(
@@ -67,8 +68,8 @@ impl <'a> Context<'a> {
         }
     }
     
-    pub fn show(&self, scene: &scene::Scene) {
-        let vbo = VertexBuffer::new(&self.display, scene.mesh.vertices());
+    pub fn draw(&self, scene: &scene::Scene) {
+        let vbo = VertexBuffer::new(&self.display, scene.get_vertex_array());
         let indices = IndicesSource::NoIndices {
             primitives: PrimitiveType::TrianglesList
         };
@@ -88,7 +89,7 @@ impl <'a> Context<'a> {
             Event::Closed                               => false,
             Event::KeyboardInput(ElementState::Pressed,
                                  _, Some(e))            => { self.handle_keyboard(scene, e) },
-            Event::MouseMoved(e)                        => { self.handle_mouse(scene, (e.0 - 800 / 2, e.1 - 600 / 2)) },
+            Event::MouseMoved(e)                        => { self.handle_mouse(scene, e); true },
             _                                           => true,
         }
     }
@@ -96,19 +97,33 @@ impl <'a> Context<'a> {
     fn handle_keyboard(&self, scene: &mut scene::Scene, e: VirtualKeyCode) -> bool {
         match e {
             VirtualKeyCode::Escape => false,
-            VirtualKeyCode::W      => { scene.camera.forward(1.0); true },
-            VirtualKeyCode::A      => { scene.camera.forward(1.0); true },
-            VirtualKeyCode::S      => { scene.camera.forward(-1.0); true },
-            VirtualKeyCode::D      => { scene.camera.forward(-1.0); true },
+            VirtualKeyCode::W      => { scene.camera.move_dir(Direction::Up,    1.0); true },
+            VirtualKeyCode::A      => { scene.camera.move_dir(Direction::Left,  1.0); true },
+            VirtualKeyCode::S      => { scene.camera.move_dir(Direction::Down,  1.0); true },
+            VirtualKeyCode::D      => { scene.camera.move_dir(Direction::Right, 1.0); true },
             _                      => true,
         }
     }
     
-    fn handle_mouse(&self, scene: &mut scene::Scene, e: (i32, i32)) -> bool {
-//        self.display.get_window().unwrap().set_cursor_position(800 / 2, 600 / 2).unwrap();
-        if e != (0, 0) {
-            println!("{:?}", e);
-        };
-        true
+    fn handle_mouse(&self, scene: &mut scene::Scene, e: (i32, i32)) {
+        let dim = get_display_dim(&self.display);
+        let center = (dim.0 / 2, dim.1 / 2);
+        
+        match (e.0 - center.0, e.1 - center.1) {
+            (0, 0) => (),
+            (x, y) => { set_cursor_pos(&self.display, center);
+                        println!("{} {}", x, y) },
+        }
     }
+}
+
+pub fn get_display_dim(display: &Display) -> (i32, i32) {
+    match display.get_window().unwrap().get_inner_size() {
+        Some(dim) => (dim.0 as i32, dim.1 as i32),
+        None => panic!("Couldn't get window dimensions")
+    }
+}
+
+pub fn set_cursor_pos(display: &Display, pos: (i32, i32)) {
+    display.get_window().unwrap().set_cursor_position(pos.0, pos.1).unwrap();
 }
