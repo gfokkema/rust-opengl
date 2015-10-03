@@ -25,7 +25,7 @@ impl Mesh {
     
     pub fn from_str(obj: &str) -> Mesh {
         let mut mesh = Mesh::new();
-        for line in obj.lines_any().collect::<Vec<&str>>() {
+        for line in obj.lines().collect::<Vec<&str>>() {
             mesh.parse_line(line.trim());
         }
         mesh

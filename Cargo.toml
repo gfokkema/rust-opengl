@@ -8,8 +8,11 @@ name = "main"
 path = "src/main.rs"
 
 [dependencies]
-cgmath = "*"
-glium = "*"
+cgmath = "0.3.1"
 regex = "*"
 regex_macros = "*"
 time = "*"
+
+[dependencies.glium]
+version = "0.9.1"
+features = ["cgmath", "glutin", "image"]
