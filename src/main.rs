@@ -1,12 +1,9 @@
 #![feature(convert)]
 //#![feature(core_intrinsics)]
 #![feature(slice_patterns)]
-#![feature(plugin)]
-#![plugin(regex_macros)]
 
 #[macro_use] extern crate glium;
 extern crate cgmath;
-extern crate regex;
 extern crate time;
 
 mod camera;
@@ -15,7 +12,6 @@ mod mesh;
 
 use std::env;
 use std::fs::File;
-use std::io::Read;
 
 //fn print_type_of<T>(_: &T) -> () {
 //  let type_name =
@@ -33,21 +29,15 @@ fn main() {
     _       => panic!("Too many arguments specified"),
   };
 
-  let mut file = match File::open(path) {
+  let file = match File::open(path) {
     Ok(e)   => e,
     Err(_)  => panic!("Invalid mesh specified"),
   };
 
-  let mut obj = String::new();
-  match file.read_to_string(&mut obj) {
-    Ok(_)   => (),
-    Err(_)  => panic!("Error while reading mesh"),
-  }
-
   let size    = (800, 600);
   let mut camera  = camera::Camera::new(size, 90.0);
   let context = context::Context::new(size);
-  let mesh    = obj.parse::<mesh::Mesh>().unwrap();
+  let mesh    = mesh::load_mesh(file);
   loop {
     context.draw(&camera, &mesh);
 

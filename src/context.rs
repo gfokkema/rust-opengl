@@ -66,8 +66,8 @@ impl <'a> Context<'a> {
     }
   }
   
-  pub fn draw(&self, camera: &camera::Camera, mesh: &mesh::Mesh) {
-    let vbo = VertexBuffer::new(&self.display, &mesh.get_vertex_array()).unwrap().into_vertex_buffer_any();
+  pub fn draw(&self, camera: &camera::Camera, mesh: &Vec<mesh::Vertex>) {
+    let vbo = VertexBuffer::new(&self.display, &mesh).unwrap().into_vertex_buffer_any();
     let indices = IndicesSource::NoIndices {
       primitives: PrimitiveType::TrianglesList
     };

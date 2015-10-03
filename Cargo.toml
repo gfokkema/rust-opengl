@@ -9,8 +9,8 @@ path = "src/main.rs"
 
 [dependencies]
 cgmath = "0.3.1"
-regex = "*"
-regex_macros = "*"
+genmesh = "*"
+obj = "0.3.0"
 time = "*"
 
 [dependencies.glium]
