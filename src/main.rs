@@ -4,6 +4,8 @@
 
 #[macro_use] extern crate glium;
 extern crate cgmath;
+extern crate genmesh;
+extern crate obj;
 extern crate time;
 
 mod camera;
@@ -12,14 +14,6 @@ mod mesh;
 
 use std::env;
 use std::fs::File;
-
-//fn print_type_of<T>(_: &T) -> () {
-//  let type_name =
-//    unsafe {
-//      std::intrinsics::type_name::<T>()
-//    };
-//  println!("{}", type_name);
-//}
 
 fn main() {
   let args: Vec<_> = env::args().skip(1).collect();
