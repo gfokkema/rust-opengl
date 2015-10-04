@@ -21,7 +21,7 @@ fn main() {
   };
 
   let size    = (800, 600);
-  let mut camera  = camera::Camera::new(size, 90.0);
+  let mut camera  = camera::Camera::new(size, 60.0);
   let context = context::Context::new(size);
   let mesh    = mesh::load_mesh(file);
   loop {

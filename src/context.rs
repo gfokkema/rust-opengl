@@ -6,7 +6,7 @@ use glium::glutin::{Event, ElementState, VirtualKeyCode, WindowBuilder};
 use glium::index::{IndicesSource, NoIndices, PrimitiveType};
 
 use camera;
-use camera::{Camera, Direction};
+use camera::Direction;
 use mesh;
 
 const VERTEX_SHADER_SRC: &'static str = r#"
@@ -40,7 +40,7 @@ const FRAGMENT_SHADER_SRC: &'static str = r#"
 pub struct Context<'a> {
   pub display: Display,
       params:  DrawParameters<'a>,
-  pub program: Program,
+      program: Program,
 }
 
 impl <'a> Context<'a> {
@@ -49,8 +49,14 @@ impl <'a> Context<'a> {
                   .with_dimensions(size.0 as u32, size.1 as u32)
                   .with_depth_buffer(24)
                   .build_glium().unwrap();
+//    fn callback(x: u32, y: u32) { println!("{} {}", x, y) };
+//    match display.get_window() {
+//        Some(w) => w.set_window_resize_callback(Some(callback)),
+//        None => {},
+//    }
+
     let program = program!(&display, 140 => {
-                    vertex: VERTEX_SHADER_SRC,
+                    vertex:   VERTEX_SHADER_SRC,
                     fragment: FRAGMENT_SHADER_SRC
                   }).unwrap();
     let params = DrawParameters {

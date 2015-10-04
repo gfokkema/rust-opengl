@@ -15,7 +15,11 @@ pub fn load_mesh(file: File) -> Vec<Vertex> {
   let data = Obj::load(&mut BufReader::new(file));
   let mut vertex_data = Vec::new();
 
+  println!("{:?}", data.materials());
   for object in data.object_iter() {
+    for group in object.group_iter() {
+      println!("{:?}", group.material);
+    };
     for shape in object.group_iter().flat_map(|g| g.indices().iter()) {
       shape.emit_triangles(|t| {
         for v in [t.x, t.y, t.z].iter() {
