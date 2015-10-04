@@ -1,17 +1,9 @@
 #![feature(convert)]
-//#![feature(core_intrinsics)]
 #![feature(slice_patterns)]
 
-#[macro_use] extern crate glium;
-extern crate cgmath;
-extern crate genmesh;
-extern crate obj;
-extern crate time;
+extern crate rust_opengl;
 
-mod camera;
-mod context;
-mod mesh;
-
+use rust_opengl::*;
 use std::env;
 use std::fs::File;
 

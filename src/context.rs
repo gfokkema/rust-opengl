@@ -1,5 +1,5 @@
 use cgmath::{FixedArray, Matrix3, Matrix4};
-use glium::{BackfaceCullingMode, Depth, DepthTest, Display, DisplayBuild,
+use glium::{Depth, DepthTest, Display, DisplayBuild,
             DrawParameters, Program, Surface, VertexBuffer};
 use glium::glutin::Event::{KeyboardInput, MouseMoved};
 use glium::glutin::{Event, ElementState, VirtualKeyCode, WindowBuilder};
@@ -9,26 +9,31 @@ use camera;
 use camera::{Camera, Direction};
 use mesh;
 
-const vertex_shader_src: &'static str = r#"
+const VERTEX_SHADER_SRC: &'static str = r#"
   #version 140
   
   attribute vec3 position;
   attribute vec3 barycentric;
+
+  out vec2 mypos;
   
   uniform mat4 mvp;
   
   void main() {
+    mypos = vec2(position) + 0.5 * vec2(1,1);
     gl_Position = mvp * vec4(position, 1.0);
   }
 "#;
 
-const fragment_shader_src: &'static str = r#"
+const FRAGMENT_SHADER_SRC: &'static str = r#"
   #version 140
-	
+
+  in vec2 mypos;
+
   out vec4 color;
 	
   void main() {
-    color = vec4(1.0, 0.0, 0.0, 1.0);
+    color = vec4(mypos, 0.0, 1.0);
   }
 "#;
 
@@ -45,12 +50,10 @@ impl <'a> Context<'a> {
                   .with_depth_buffer(24)
                   .build_glium().unwrap();
     let program = program!(&display, 140 => {
-                    vertex: vertex_shader_src,
-                    fragment: fragment_shader_src
+                    vertex: VERTEX_SHADER_SRC,
+                    fragment: FRAGMENT_SHADER_SRC
                   }).unwrap();
-    
     let params = DrawParameters {
-      backface_culling: BackfaceCullingMode::CullingDisabled,
       depth: Depth {
         test:  DepthTest::IfLess,
         write: true,
