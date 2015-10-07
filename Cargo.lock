@@ -5,6 +5,7 @@ dependencies = [
  "cgmath 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "genmesh 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "glium 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "image 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "obj 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.32 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

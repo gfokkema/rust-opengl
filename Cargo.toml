@@ -6,6 +6,7 @@ authors = ["Gerlof Fokkema"]
 [dependencies]
 cgmath = "0.3.1"
 genmesh = "*"
+image = "*"
 obj = "0.3.0"
 time = "*"
 

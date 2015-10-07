@@ -1,13 +1,21 @@
 use cgmath::{FixedArray, Matrix3, Matrix4};
 use glium::{Depth, DepthTest, Display, DisplayBuild,
             DrawParameters, Program, Surface, VertexBuffer};
-use glium::glutin::Event::{KeyboardInput, MouseMoved};
 use glium::glutin::{Event, ElementState, VirtualKeyCode, WindowBuilder};
-use glium::index::{IndicesSource, NoIndices, PrimitiveType};
+use glium::glutin::Event::{KeyboardInput, MouseMoved};
+use glium::index::{IndexBuffer, PrimitiveType};
 
 use camera;
 use camera::Direction;
-use mesh;
+use mesh::Indices;
+use obj;
+use std::rc::Rc;
+
+#[derive(Copy, Clone)]
+pub struct Vertex {
+  position: [f32; 3]
+}
+implement_vertex!(Vertex, position);
 
 const VERTEX_SHADER_SRC: &'static str = r#"
   #version 140
@@ -39,8 +47,8 @@ const FRAGMENT_SHADER_SRC: &'static str = r#"
 
 pub struct Context<'a> {
   pub display: Display,
-      params:  DrawParameters<'a>,
-      program: Program,
+    params:  DrawParameters<'a>,
+    program: Program,
 }
 
 impl <'a> Context<'a> {
@@ -51,8 +59,8 @@ impl <'a> Context<'a> {
                   .build_glium().unwrap();
 //    fn callback(x: u32, y: u32) { println!("{} {}", x, y) };
 //    match display.get_window() {
-//        Some(w) => w.set_window_resize_callback(Some(callback)),
-//        None => {},
+//      Some(w) => w.set_window_resize_callback(Some(callback)),
+//      None => {},
 //    }
 
     let program = program!(&display, 140 => {
@@ -75,11 +83,10 @@ impl <'a> Context<'a> {
     }
   }
   
-  pub fn draw(&self, camera: &camera::Camera, mesh: &Vec<mesh::Vertex>) {
-    let vbo = VertexBuffer::new(&self.display, &mesh).unwrap().into_vertex_buffer_any();
-    let indices = IndicesSource::NoIndices {
-      primitives: PrimitiveType::TrianglesList
-    };
+  pub fn draw(&self, camera: &camera::Camera, mesh: &obj::Obj<Rc<obj::Material>>) {
+    let positions = VertexBuffer::new(&self.display, &mesh.position().iter().map(|x| Vertex  { position: *x }).collect::<Vec<_>>() ).unwrap();
+    let indices = IndexBuffer::new(&self.display, PrimitiveType::TrianglesList, &mesh.indices().as_ref()).unwrap();
+
     let model: Matrix4<f32> = Matrix3::from_value(1.0).into();
     let uniforms = uniform! {
       mvp: *(camera.project * camera.view * model).as_fixed(),
@@ -87,15 +94,15 @@ impl <'a> Context<'a> {
     
     let mut target = self.display.draw();
     target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
-    target.draw(&vbo, indices, &self.program, &uniforms, &self.params).unwrap();
+    target.draw(&positions, &indices, &self.program, &uniforms, &self.params).unwrap();
     target.finish().unwrap();
   }
   
   pub fn handle_input(&self, camera: &mut camera::Camera, ev: Event) -> bool {
     match ev {
       Event::Closed                 => false,
-      Event::KeyboardInput(ElementState::Pressed,
-                 _, Some(e))        => { self.handle_keyboard(camera, e) },
+      Event::KeyboardInput(ElementState::Pressed, _, Some(e))
+                                    => { self.handle_keyboard(camera, e) },
       Event::MouseMoved(e)          => { self.handle_mouse(e); true },
       _                             => true,
     }

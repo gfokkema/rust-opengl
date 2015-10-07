@@ -1,43 +1,28 @@
-use genmesh::EmitTriangles;
-use obj::Obj;
-use std::fs::File;
-use std::io::BufReader;
+use genmesh::{Polygon, Triangle, Quad};
+use obj;
+use std::rc::Rc;
 
-#[derive(Copy, Clone, Debug)]
-pub struct Vertex {
-  position: [f32; 3],
-  normal:   [f32; 3],
-  texture:  [f32; 2],
+pub trait Indices {
+  fn indices(&self) -> Vec<u16>;
 }
-implement_vertex!(Vertex, position, normal, texture);
 
-pub fn load_mesh(file: File) -> Vec<Vertex> {
-  let data = Obj::load(&mut BufReader::new(file));
-  let mut vertex_data = Vec::new();
-
-  println!("{:?}", data.materials());
-  for object in data.object_iter() {
-    for group in object.group_iter() {
-      println!("{:?}", group.material);
-    };
-    for shape in object.group_iter().flat_map(|g| g.indices().iter()) {
-      shape.emit_triangles(|t| {
-        for v in [t.x, t.y, t.z].iter() {
-          let position = data.position()[v.0];
-          let texture = v.1.map(|index| data.texture()[index]);
-          let normal = v.2.map(|index| data.normal()[index]);
-
-          let texture = texture.unwrap_or([0.0, 0.0]);
-          let normal = normal.unwrap_or([0.0, 0.0, 0.0]);
-
-          vertex_data.push(Vertex {
-            position: position,
-            normal:   normal,
-            texture:  texture,
-          })
-        }
+impl Indices for obj::Obj<Rc<obj::Material>> {
+  fn indices(&self) -> Vec<u16> {
+    self.object_iter()
+    .flat_map(|x| x.group_iter())
+    .flat_map(|g| g.indices())
+    .flat_map(|i|
+      match i {
+        &Polygon::PolyTri(Triangle {
+          x: (a,_,_), y: (b,_,_), z: (c,_,_)
+        }) =>
+          vec![ a as u16, b as u16, c as u16 ],
+        &Polygon::PolyQuad(Quad {
+          x: (a,_,_), y: (b,_,_), z: (c,_,_), w: (d,_,_)
+        }) =>
+          vec![ a as u16, b as u16, c as u16,
+                a as u16, b as u16, d as u16 ],
       })
-    }
+    .collect::<Vec<_>>()
   }
-  vertex_data
 }
