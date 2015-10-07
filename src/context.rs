@@ -4,12 +4,16 @@ use glium::{Depth, DepthTest, Display, DisplayBuild,
 use glium::glutin::{Event, ElementState, VirtualKeyCode, WindowBuilder};
 use glium::glutin::Event::{KeyboardInput, MouseMoved};
 use glium::index::{IndexBuffer, PrimitiveType};
+use glium::texture::Texture2d;
 
 use camera;
 use camera::Direction;
+use image;
+use image::{DynamicImage, ImageResult};
 use mesh::Indices;
 use obj;
 use std::rc::Rc;
+use std::path::Path;
 
 #[derive(Copy, Clone)]
 pub struct Vertex {
@@ -49,6 +53,7 @@ pub struct Context<'a> {
   pub display: Display,
     params:  DrawParameters<'a>,
     program: Program,
+    image:   DynamicImage,
 }
 
 impl <'a> Context<'a> {
@@ -80,21 +85,25 @@ impl <'a> Context<'a> {
       display: display,
       params:  params,
       program: program,
+      image:   image::open(Path::new("/home/gerlof/workspace/rust_opengl/Desmond_Miles/Desmond_hooded_shirt_D.tga")).unwrap()
     }
   }
   
   pub fn draw(&self, camera: &camera::Camera, mesh: &obj::Obj<Rc<obj::Material>>) {
-    let positions = VertexBuffer::new(&self.display, &mesh.position().iter().map(|x| Vertex  { position: *x }).collect::<Vec<_>>() ).unwrap();
-    let indices = IndexBuffer::new(&self.display, PrimitiveType::TrianglesList, &mesh.indices().as_ref()).unwrap();
-
+    let positions = VertexBuffer::new(&self.display, &mesh.position().iter().map(|x| Vertex { position: *x }).collect::<Vec<_>>() ).unwrap();
     let model: Matrix4<f32> = Matrix3::from_value(1.0).into();
+//    let texture = Texture2d::new(&self.display, self.image.clone()).unwrap();
     let uniforms = uniform! {
-      mvp: *(camera.project * camera.view * model).as_fixed(),
+      mvp:     *(camera.project * camera.view * model).as_fixed(),
     };
     
     let mut target = self.display.draw();
     target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
-    target.draw(&positions, &indices, &self.program, &uniforms, &self.params).unwrap();
+    
+    for group in mesh.object_iter().flat_map(|o| o.group_iter()) {
+      let indices = IndexBuffer::new(&self.display, PrimitiveType::TrianglesList, group.vertex_indices().as_ref()).unwrap();
+      target.draw(&positions, &indices, &self.program, &uniforms, &self.params).unwrap();
+    }
     target.finish().unwrap();
   }
   
