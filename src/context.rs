@@ -3,49 +3,49 @@ use glium::{Depth, DepthTest, Display, DisplayBuild,
             DrawParameters, Program, Surface, VertexBuffer};
 use glium::glutin::{Event, ElementState, VirtualKeyCode, WindowBuilder};
 use glium::glutin::Event::{KeyboardInput, MouseMoved};
-use glium::index::{IndexBuffer, PrimitiveType};
-use glium::texture::Texture2d;
+use glium::index::{NoIndices, PrimitiveType};
+use glium::texture::Texture2dArray;
 
 use camera;
 use camera::Direction;
 use image;
-use image::{DynamicImage, ImageResult};
-use mesh::Indices;
+use mesh::Mesh;
 use obj;
 use std::rc::Rc;
 use std::path::Path;
 
-#[derive(Copy, Clone)]
-pub struct Vertex {
-  position: [f32; 3]
-}
-implement_vertex!(Vertex, position);
-
 const VERTEX_SHADER_SRC: &'static str = r#"
   #version 140
   
-  attribute vec3 position;
-  attribute vec3 barycentric;
+  attribute vec3 v_position;
+  attribute vec3 v_normal;
+  attribute vec2 v_tex_coords;
+  attribute uint v_tex_id;
 
-  out vec2 mypos;
+       out vec2 tex_coords;
+  flat out uint tex_id;
   
   uniform mat4 mvp;
   
   void main() {
-    mypos = vec2(position) + 0.5 * vec2(1,1);
-    gl_Position = mvp * vec4(position, 1.0);
+    tex_id = v_tex_id;
+    tex_coords = v_tex_coords;
+    gl_Position = mvp * vec4(v_position, 1.0);
   }
 "#;
 
 const FRAGMENT_SHADER_SRC: &'static str = r#"
   #version 140
 
-  in vec2 mypos;
+       in vec2 tex_coords;
+  flat in uint tex_id;
 
   out vec4 color;
+  
+  uniform sampler2DArray tex;
 	
   void main() {
-    color = vec4(mypos, 0.0, 1.0);
+    color = texture(tex, vec3(tex_coords, tex_id));
   }
 "#;
 
@@ -53,7 +53,7 @@ pub struct Context<'a> {
   pub display: Display,
     params:  DrawParameters<'a>,
     program: Program,
-    image:   DynamicImage,
+    textures: Texture2dArray,
 }
 
 impl <'a> Context<'a> {
@@ -62,12 +62,6 @@ impl <'a> Context<'a> {
                   .with_dimensions(size.0 as u32, size.1 as u32)
                   .with_depth_buffer(24)
                   .build_glium().unwrap();
-//    fn callback(x: u32, y: u32) { println!("{} {}", x, y) };
-//    match display.get_window() {
-//      Some(w) => w.set_window_resize_callback(Some(callback)),
-//      None => {},
-//    }
-
     let program = program!(&display, 140 => {
                     vertex:   VERTEX_SHADER_SRC,
                     fragment: FRAGMENT_SHADER_SRC
@@ -81,29 +75,30 @@ impl <'a> Context<'a> {
       .. Default::default()
     };
     
+    
+    let images = vec![ image::open(Path::new("./debug_texture.jpg")).unwrap(),
+                       image::open(Path::new("./debug_texture.jpg")).unwrap(), ];
+    let textures = Texture2dArray::new(&display, images).unwrap();
+    
     Context {
-      display: display,
-      params:  params,
-      program: program,
-      image:   image::open(Path::new("/home/gerlof/workspace/rust_opengl/Desmond_Miles/Desmond_hooded_shirt_D.tga")).unwrap()
+      display:  display,
+      params:   params,
+      program:  program,
+      textures: textures,
     }
   }
   
   pub fn draw(&self, camera: &camera::Camera, mesh: &obj::Obj<Rc<obj::Material>>) {
-    let positions = VertexBuffer::new(&self.display, &mesh.position().iter().map(|x| Vertex { position: *x }).collect::<Vec<_>>() ).unwrap();
+    let indices = NoIndices(PrimitiveType::TrianglesList);
     let model: Matrix4<f32> = Matrix3::from_value(1.0).into();
-//    let texture = Texture2d::new(&self.display, self.image.clone()).unwrap();
     let uniforms = uniform! {
       mvp:     *(camera.project * camera.view * model).as_fixed(),
     };
     
     let mut target = self.display.draw();
     target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
-    
-    for group in mesh.object_iter().flat_map(|o| o.group_iter()) {
-      let indices = IndexBuffer::new(&self.display, PrimitiveType::TrianglesList, group.vertex_indices().as_ref()).unwrap();
-      target.draw(&positions, &indices, &self.program, &uniforms, &self.params).unwrap();
-    }
+    let vertices = VertexBuffer::new(&self.display, &mesh.vertex_buffer()).unwrap();
+    target.draw(&vertices, &indices, &self.program, &uniforms, &self.params).unwrap();
     target.finish().unwrap();
   }
   
